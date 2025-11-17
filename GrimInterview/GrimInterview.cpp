@@ -6,6 +6,7 @@
 #include "framework.h"
 #include "GrimInterview.h"
 #include "GrimInterviewDlg.h"
+#include "Threadpool.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -70,6 +71,9 @@ BOOL CGrimInterviewApp::InitInstance()
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
 	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+
+	const auto threadpool = Threadpool::GetInstance();
+
 
 	CGrimInterviewDlg dlg;
 	m_pMainWnd = &dlg;

@@ -3,7 +3,7 @@
 //
 
 #pragma once
-
+#define WM_UPDATE_DISPLAY (WM_USER + 1)
 
 // CGrimInterviewDlg dialog
 class CGrimInterviewDlg : public CDialogEx
@@ -26,7 +26,7 @@ protected:
 	HICON m_hIcon;
 
 	// Generated message map functions
-	virtual BOOL OnInitDialog();
+	BOOL OnInitDialog() override;
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
@@ -44,6 +44,10 @@ private:
 	void MoveCircle();
 
 	bool IsInCircle(const int i, const int j, const int centerX, const int centerY, const int nRadius) const;
+
+	bool IsInImage(const int i, const int j) const;
+
+	afx_msg LRESULT OnUpdateDisplay(WPARAM , LPARAM );
 
 public:
 	afx_msg void OnBnClickedAction();

@@ -10,6 +10,8 @@
 #include <thread>
 
 #include "afxdialogex.h"
+#include "RandomTask.h"
+#include "Threadpool.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -36,8 +38,8 @@ BEGIN_MESSAGE_MAP(CGrimInterviewDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(ID_CREATE_IMAGE, &CGrimInterviewDlg::OnBnClickedCreateImage)
 	ON_BN_CLICKED(ID_ACTION, &CGrimInterviewDlg::OnBnClickedAction)
+	ON_MESSAGE(WM_UPDATE_DISPLAY, &OnUpdateDisplay)
 END_MESSAGE_MAP()
-
 
 // CGrimInterviewDlg message handlers
 
@@ -51,6 +53,12 @@ BOOL CGrimInterviewDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
+
+	CEdit* pCircleLine = (CEdit*)GetDlgItem(IDC_EDIT_CIRCLE_LINE);
+	pCircleLine->SetWindowTextW(_T("3"));
+
+	CEdit* pRadius = (CEdit*)GetDlgItem(IDC_EDIT_RADIUS);
+	pRadius->SetWindowTextW(_T("10"));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -169,12 +177,12 @@ void CGrimInterviewDlg::MoveCircle()
 		}
 
 		const int nRadius = 10;
-		drawCircle(fm, nSttX, nStty, 10, nGray);
+		drawCircle(fm, nSttX, nStty, nRadius, nGray);
 		++nSttX;
 		++nStty;
 	}
 	
-	UpdateDisplay();
+	PostMessage(WM_UPDATE_DISPLAY);
 }
 
 bool CGrimInterviewDlg::IsInCircle(const int i, const int j, const int centerX, const int centerY,
@@ -190,6 +198,23 @@ bool CGrimInterviewDlg::IsInCircle(const int i, const int j, const int centerX, 
 	return bRet;
 }
 
+bool CGrimInterviewDlg::IsInImage(const int i, const int j) const
+{
+	bool bRet = false;
+	const int nWidth = m_image.GetWidth();
+	const int nHeight = m_image.GetHeight();
+	if (i >= 0 && i < nWidth && j >= 0 && j < nHeight)
+		bRet = true;
+
+	return bRet;
+}
+
+LRESULT CGrimInterviewDlg::OnUpdateDisplay(WPARAM, LPARAM)
+{
+	UpdateDisplay();
+	return 0;
+}
+
 void CGrimInterviewDlg::OnBnClickedAction()
 {
 	auto move = [this]
@@ -202,6 +227,7 @@ void CGrimInterviewDlg::OnBnClickedAction()
 
 		};
 
-	std::thread threadMove(move);
-	threadMove.detach();
+	auto threadpool = Threadpool::GetInstance();
+	auto task = std::make_shared<RandomTask>(move);
+	threadpool->AddWork(task);
 }

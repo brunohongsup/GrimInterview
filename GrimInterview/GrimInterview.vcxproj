@@ -186,19 +186,25 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="GrimInterview.h" />
     <ClInclude Include="GrimInterviewDlg.h" />
+    <ClInclude Include="ITask.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="RandomTask.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Threadpool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GrimInterview.cpp" />
     <ClCompile Include="GrimInterviewDlg.cpp" />
+    <ClCompile Include="ITask.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="RandomTask.cpp" />
+    <ClCompile Include="Threadpool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GrimInterview.rc" />

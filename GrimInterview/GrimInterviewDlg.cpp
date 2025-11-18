@@ -37,6 +37,8 @@ BEGIN_MESSAGE_MAP(CGrimInterviewDlg, CDialogEx)
 	ON_MESSAGE(WM_UPDATE_DISPLAY, &OnUpdateDisplay)
 	ON_WM_LBUTTONDOWN()
 	ON_BN_CLICKED(ID_CLEAR, &CGrimInterviewDlg::OnBnClickedClear)
+	ON_WM_MOUSEMOVE()
+	ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 // CGrimInterviewDlg message handlers
@@ -354,21 +356,27 @@ void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 	if (IsInImage(point.x, point.y))
 	{
-		if (m_nCircleCount < 3)
-		{
-			auto task = [this, point] {
-				auto fm = (unsigned char*)m_image.GetBits();
-				drawCircle(fm, point.x, point.y, static_cast<int>(m_nRadius), s_Gray);
-				m_circleCenters[m_nCircleCount++] = point;
-				if (m_nCircleCount == 3)
-					DrawCircleWithThreePoints();
+		auto task = [this, point]
+			{
+				if (m_nCircleCount < 3)
+				{
+					auto fm = (unsigned char*)m_image.GetBits();
+					drawCircle(fm, point.x, point.y, static_cast<int>(m_nRadius), s_Gray);
+					m_circleCenters[m_nCircleCount++] = point;
+					if (m_nCircleCount == 3)
+						DrawCircleWithThreePoints();
 
-				UpdateDisplay();
+					UpdateDisplay();
+				}
+
+				else
+				{
+					m_bDrag = true;
+				}
 			};
-			
-			auto threadpool = Threadpool::GetInstance();
-			threadpool->AddWork(task);
-		}
+
+		auto threadpool = Threadpool::GetInstance();
+		threadpool->AddWork(task);
 	}
 
 	CDialogEx::OnLButtonDown(nFlags, point);
@@ -403,4 +411,49 @@ bool CGrimInterviewDlg::IsCirclePoint(const int i, const int j, const int center
 		bRet = true;
 
 	return bRet;
+}
+
+void CGrimInterviewDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	auto task = [this, point]
+		{
+			if (m_bDrag)
+			{
+				for (int idx = 0; idx < 3; idx++)
+				{
+					const double dblDistanceSquared = (point.x - m_circleCenters[idx].x) * (point.x - m_circleCenters[idx].x) +
+						(point.y - m_circleCenters[idx].y) * (point.y - m_circleCenters[idx].y);
+					if (dblDistanceSquared < 6 * 6)
+						m_circleCenters[idx] = point;
+				}
+
+				auto fm = (unsigned  char*)m_image.GetBits();
+				const int nPitch = m_image.GetPitch();
+				const int nWidth = m_image.GetWidth();
+				const int nHeight = m_image.GetHeight();
+				for (int j = 0; j < nHeight; j++)
+				{
+					for (int i = 0; i < nWidth; i++)
+						fm[j * nPitch + i] = 0xff;
+				}
+
+				for (int idx = 0; idx < 3; idx++)
+					drawCircle(fm, m_circleCenters[idx].x, m_circleCenters[idx].y, static_cast<int>(m_nRadius), s_Gray);
+
+				DrawCircleWithThreePoints();
+				UpdateDisplay();
+			}
+
+		};
+	
+	auto threadpool = Threadpool::GetInstance();
+	threadpool->AddWork(task);
+
+	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+void CGrimInterviewDlg::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	m_bDrag = false;
+	CDialogEx::OnLButtonUp(nFlags, point);
 }

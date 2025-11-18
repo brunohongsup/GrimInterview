@@ -117,6 +117,9 @@ void CGrimInterviewDlg::OnBnClickedCreateImage()
 	const int nWidth = 640;
 	const int nHeight = 480;
 	const int nBpp = 8;
+	if (!m_image.IsNull())
+		return;
+
 	bool bRet = m_image.Create(nWidth, nHeight, nBpp);
 	if (nBpp == 8)
 	{

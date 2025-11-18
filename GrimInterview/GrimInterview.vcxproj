@@ -183,31 +183,31 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="GrimInterview.h" />
-    <ClInclude Include="GrimInterviewDlg.h" />
-    <ClInclude Include="ITask.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="RandomTask.h" />
-    <ClInclude Include="Resource.h" />
-    <ClInclude Include="targetver.h" />
-    <ClInclude Include="Threadpool.h" />
+    <ClInclude Include="과제 1 소스\framework.h" />
+    <ClInclude Include="과제 1 소스\GrimInterview.h" />
+    <ClInclude Include="과제 1 소스\GrimInterviewDlg.h" />
+    <ClInclude Include="과제 1 소스\ITask.h" />
+    <ClInclude Include="과제 1 소스\pch.h" />
+    <ClInclude Include="과제 1 소스\RandomTask.h" />
+    <ClInclude Include="과제 1 소스\Resource.h" />
+    <ClInclude Include="과제 1 소스\targetver.h" />
+    <ClInclude Include="과제 1 소스\Threadpool.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GrimInterview.cpp" />
-    <ClCompile Include="GrimInterviewDlg.cpp" />
-    <ClCompile Include="ITask.cpp" />
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="과제 1 소스\GrimInterview.cpp" />
+    <ClCompile Include="과제 1 소스\GrimInterviewDlg.cpp" />
+    <ClCompile Include="과제 1 소스\ITask.cpp" />
+    <ClCompile Include="과제 1 소스\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="RandomTask.cpp" />
-    <ClCompile Include="Threadpool.cpp" />
+    <ClCompile Include="과제 1 소스\RandomTask.cpp" />
+    <ClCompile Include="과제 1 소스\Threadpool.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="GrimInterview.rc" />
+    <ResourceCompile Include="과제 1 소스\GrimInterview.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\GrimInterview.rc2" />

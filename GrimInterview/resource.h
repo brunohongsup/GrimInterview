@@ -6,6 +6,8 @@
 #define ID_CREATE_IMAGE                 2
 #define ID_ACTION                       3
 #define ID_CLEAR                        4
+#define ID_RANDOM_MOVE                  5
+#define ID_CONSECUTIVE_RANDOM_MOVE      6
 #define IDD_GRIMINTERVIEW_DIALOG        102
 #define IDR_MAINFRAME                   128
 #define IDC_EDIT_RADIUS                 1000

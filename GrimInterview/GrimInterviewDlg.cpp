@@ -9,7 +9,7 @@
 
 #include <cmath>
 #include <thread>
-
+#include <random>
 #include "afxdialogex.h"
 #include "RandomTask.h"
 #include "Threadpool.h"
@@ -39,6 +39,8 @@ BEGIN_MESSAGE_MAP(CGrimInterviewDlg, CDialogEx)
 	ON_BN_CLICKED(ID_CLEAR, &CGrimInterviewDlg::OnBnClickedClear)
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONUP()
+	ON_BN_CLICKED(ID_RANDOM_MOVE, &CGrimInterviewDlg::OnBnClickedRandomMove)
+	ON_BN_CLICKED(ID_CONSECUTIVE_RANDOM_MOVE, &CGrimInterviewDlg::OnBnClickedConsecutiveRandomMove)
 END_MESSAGE_MAP()
 
 // CGrimInterviewDlg message handlers
@@ -149,8 +151,11 @@ void CGrimInterviewDlg::drawCircle(unsigned char* fm, const int centerX, const i
 	{
 		for (int i = centerX - nRadius; i < centerX + nRadius; i++)
 		{
-			if (IsInCircle(i, j, centerX, centerY, nRadius))
-				fm[j * nPitch + i] = nGray;
+			if (IsInImage(i, j))
+			{
+				if (IsInCircle(i, j, centerX, centerY, nRadius))
+					fm[j * nPitch + i] = nGray;
+			}
 		}
 	}
 }
@@ -165,7 +170,9 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 	CPoint circleCenter{};
 	bool bRet = GetIntersectionWidthDirections(&circleCenter, firstPairCenter, firstDirection, secondPairCenter, secondDirection);
 	if (!bRet)
-		return;
+	{
+		
+	}
 
 	const int dx = circleCenter.x - m_circleCenters[0].x;
 	const int dy = circleCenter.y - m_circleCenters[0].y;
@@ -189,6 +196,46 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 	}
 }
 
+void CGrimInterviewDlg::clearImage()
+{
+	const int nWidth = m_image.GetWidth();
+	const int nHeight = m_image.GetHeight();
+	const int nPitch = m_image.GetPitch();
+	unsigned char* fm = static_cast<unsigned char*>(m_image.GetBits());
+
+	for (int j = 0; j < nHeight; j++)
+	{
+		for (int i = 0; i < nWidth; i++)
+		{
+			fm[j * nPitch + i] = 0xff;
+		}
+	}
+}
+
+void CGrimInterviewDlg::randomMove()
+{
+	auto fm = (unsigned  char*)m_image.GetBits();
+	const int nPitch = m_image.GetPitch();
+	const int nWidth = m_image.GetWidth();
+	const int nHeight = m_image.GetHeight();
+	clearImage();
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> distrWidth(0, m_image.GetWidth() - 1);
+	std::uniform_int_distribution<> distrHeight(0, m_image.GetHeight() - 1);
+
+	for (int i = 0; i < 3; i++)
+	{
+		m_circleCenters[i].x = distrWidth(gen);
+		m_circleCenters[i].y = distrHeight(gen);
+		drawCircle(fm, m_circleCenters[i].x, m_circleCenters[i].y, m_nRadius, s_Gray);
+	}
+
+	DrawCircleWithThreePoints();
+	UpdateDisplay();
+}
+
 void CGrimInterviewDlg::UpdateDisplay()
 {
 	PostMessage(WM_UPDATE_DISPLAY);
@@ -205,13 +252,7 @@ void CGrimInterviewDlg::MoveCircle()
 	unsigned char* fm = static_cast<unsigned char*>(m_image.GetBits());
 	if (fm != nullptr)
 	{
-		for (int j = 0; j < nHeight; j++)
-		{
-			for (int i = 0; i < nWidth; i++)
-			{
-				fm[j * nPitch + i] = 0xff;
-			}
-		}
+		
 
 		const int nRadius = 10;
 		drawCircle(fm, nSttX, nStty, nRadius, s_Gray);
@@ -390,12 +431,7 @@ void CGrimInterviewDlg::OnBnClickedClear()
 	const int nHeight = m_image.GetHeight();
 	m_nCircleCount = 0;
 
-	for (int j = 0; j < nHeight; j++)
-	{
-		for (int i = 0; i < nWidth; i++)
-			fm[j * nPitch + i] = 0xff;
-	}
-
+	clearImage();
 	UpdateDisplay();
 }
 
@@ -456,4 +492,28 @@ void CGrimInterviewDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	m_bDrag = false;
 	CDialogEx::OnLButtonUp(nFlags, point);
+}
+
+void CGrimInterviewDlg::OnBnClickedRandomMove()
+{
+	if (m_nCircleCount < 3)
+		return;
+
+	auto threadpool = Threadpool::GetInstance();
+	threadpool->AddWork([this]{this->randomMove();});
+}
+
+void CGrimInterviewDlg::OnBnClickedConsecutiveRandomMove()
+{
+	auto consecutive = [this]
+		{
+			for (size_t i = 0; i < 10; i++)
+			{
+				this->randomMove();
+				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			}
+		};
+
+	auto threadpool = Threadpool::GetInstance();
+	threadpool->AddWork(consecutive);
 }

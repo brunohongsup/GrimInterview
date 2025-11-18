@@ -64,12 +64,15 @@ private:
 
 	void DrawCircleWithThreePoints();
 
+	void clearImage();
+
+	void randomMove();
 
 	constexpr static int s_Gray = 80;
 
 	CImage m_image;
 
-	size_t m_nRadius;
+	int m_nRadius;
 
 	size_t m_nCircleLine;
 
@@ -82,4 +85,6 @@ private:
 public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnBnClickedRandomMove();
+	afx_msg void OnBnClickedConsecutiveRandomMove();
 };

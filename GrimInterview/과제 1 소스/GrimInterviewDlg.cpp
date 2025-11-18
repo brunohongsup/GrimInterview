@@ -397,6 +397,10 @@ void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 	if (IsInImage(point.x, point.y))
 	{
+		strData.Format(_T("X : %03d Y : %03d"), point.x, point.y);
+		CStatic* wnd = (CStatic*)GetDlgItem(IDC_STATIC_COORDINATE);
+		wnd->SetWindowTextW(strData);
+
 		auto task = [this, point]
 			{
 				if (m_nCircleCount < 3)
@@ -406,6 +410,7 @@ void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
 					m_circleCenters[m_nCircleCount++] = point;
 					if (m_nCircleCount == 3)
 						DrawCircleWithThreePoints();
+
 
 					UpdateDisplay();
 				}

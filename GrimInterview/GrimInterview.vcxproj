@@ -214,6 +214,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\GrimInterview.ico" />
+    <Image Include="과제 1 소스\res\GrimInterview.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

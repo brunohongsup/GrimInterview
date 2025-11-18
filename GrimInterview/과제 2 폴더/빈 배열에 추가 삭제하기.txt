@@ -1,0 +1,27 @@
+#include <string>
+#include <vector>
+
+using namespace std;
+
+vector<int> solution(vector<int> arr, vector<bool> flag) {
+  	  std::vector<int> answer{};
+	size_t count = arr.size();
+ for (size_t idx = 0; idx < count; idx++)
+ {
+     const int value = arr[idx];
+  if (flag[idx])
+  {
+         for (int i = 0; i < value * 2; i++)
+	answer.push_back(value);
+  }
+
+     else
+     {
+      for (int i = 0; i < value; i++)
+             if (!answer.empty())
+		answer.pop_back();
+     }
+ }
+
+ return answer;
+}

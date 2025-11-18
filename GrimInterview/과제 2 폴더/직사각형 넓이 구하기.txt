@@ -1,0 +1,30 @@
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int solution(vector<vector<int>> dots) {
+      int answer = 0;
+  int left = std::numeric_limits<int>::max();
+  int right = std::numeric_limits<int>::min();
+  int top = std::numeric_limits<int>::min();
+  int bottom = std::numeric_limits<int>::max();
+  for (int idx = 0; idx < 4; idx++)
+  {
+   if (left > dots[idx][0])
+	left = dots[idx][0];
+
+      if (right < dots[idx][0])
+	right = dots[idx][0];
+
+      if (top < dots[idx][1])
+	top = dots[idx][1];
+
+      if (bottom > dots[idx][1])
+	bottom = dots[idx][1];
+
+  }
+
+	answer = (right - left) * (top - bottom);
+    return answer;
+}

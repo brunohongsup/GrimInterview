@@ -18,7 +18,7 @@ public:
 #endif
 
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+		void DoDataExchange(CDataExchange* pDX) override;	// DDX/DDV support
 
 
 // Implementation
@@ -47,9 +47,25 @@ public:
 
 	bool IsInCircle(const int i, const int j, const int centerX, const int centerY, const int nRadius) const;
 
+	bool IsCirclePoint(const int i, const int j, const int centerX, const int centerY, const int nRadius, const int nLineThickness) const;
+
 	bool IsInImage(const int i, const int j) const;
 
+	bool GetIntersection(__out CPoint* pIntersection, const CPoint& p1, const CPoint& p2,
+		const CPoint& q1, const CPoint& direction2) const;
+
+	bool GetIntersectionWidthDirections(__out CPoint* pIntersection, const CPoint& p1, const CPoint& direction1,
+		const CPoint& p2, const CPoint& direction2) const;
+
+
 private:
+
+	void drawCircle(unsigned char* fm, const int i, const int j, const int nRadius, unsigned char nGray);
+
+	void DrawCircleWithThreePoints();
+
+
+	constexpr static int s_Gray = 80;
 
 	CImage m_image;
 
@@ -59,8 +75,6 @@ private:
 
 	size_t m_nCircleCount;
 
-	constexpr static int s_Gray = 80;
+	CPoint m_circleCenters[3];
 
-	void drawCircle(unsigned char* fm, const int i, const int j, const int nRadius, unsigned char nGray);
-	
 };

@@ -7,6 +7,7 @@
 #include "GrimInterview.h"
 #include "GrimInterviewDlg.h"
 
+#include <cmath>
 #include <thread>
 
 #include "afxdialogex.h"
@@ -113,9 +114,6 @@ void CGrimInterviewDlg::OnBnClickedCreateImage()
 	const int nHeight = 480;
 	const int nBpp = 8;
 	bool bRet = m_image.Create(nWidth, nHeight, nBpp);
-	m_image.GetWidth();
-	m_image.GetHeight();
-	m_image.GetBPP();
 	if (nBpp == 8)
 	{
 		static RGBQUAD palette[256];
@@ -142,17 +140,49 @@ void CGrimInterviewDlg::OnBnClickedCreateImage()
 	m_image.Draw(dc.m_hDC, 0, 0);
 }
 
-void CGrimInterviewDlg::drawCircle(unsigned char* fm, const int x, const int y, const int nRadius, const unsigned char nGray)
+void CGrimInterviewDlg::drawCircle(unsigned char* fm, const int centerX, const int centerY, const int nRadius, const unsigned char nGray)
 {
-	const int nCenterX = x + nRadius;
-	const int nCenterY = y + nRadius;
 	const int nPitch = m_image.GetPitch();
-	for (int j = y; j < y + nRadius* 2; j++)
+	for (int j = centerY - nRadius; j < centerY + nRadius; j++)
 	{
-		for (int i =x; i < x + nRadius* 2; i++)
+		for (int i = centerX - nRadius; i < centerX + nRadius; i++)
 		{
-			if (IsInCircle(i, j, nCenterX, nCenterY, nRadius))
+			if (IsInCircle(i, j, centerX, centerY, nRadius))
 				fm[j * nPitch + i] = nGray;
+		}
+	}
+}
+
+void CGrimInterviewDlg::DrawCircleWithThreePoints()
+{
+	auto firstPairCenter = CPoint((m_circleCenters[0].x + m_circleCenters[1].x) / 2, (m_circleCenters[0].y + m_circleCenters[1].y) / 2);
+	auto secondPairCenter = CPoint((m_circleCenters[1].x + m_circleCenters[2].x) / 2, (m_circleCenters[1].y + m_circleCenters[2].y) / 2);
+	auto firstDirection = CPoint(m_circleCenters[1].y - m_circleCenters[0].y, m_circleCenters[0].x - m_circleCenters[1].x);
+	auto secondDirection = CPoint(m_circleCenters[2].y - m_circleCenters[1].y, m_circleCenters[1].x - m_circleCenters[2].x);
+
+	CPoint circleCenter{};
+	bool bRet = GetIntersectionWidthDirections(&circleCenter, firstPairCenter, firstDirection, secondPairCenter, secondDirection);
+	if (!bRet)
+		return;
+
+	const int dx = circleCenter.x - m_circleCenters[0].x;
+	const int dy = circleCenter.y - m_circleCenters[0].y;
+	const int radiusSquared = dx * dx + dy * dy;
+	const int radius = static_cast<int>(std::sqrt(static_cast<double>(radiusSquared)));
+	auto fm = static_cast<unsigned char*>(m_image.GetBits());
+	const int nPitch = m_image.GetPitch();
+	for (int j = circleCenter.y - radius - 1; j <= circleCenter.y + radius + 2; j++)
+	{
+		for (int i = circleCenter.x - radius - 1; i <= circleCenter.x + radius + 2; i++)
+		{
+			if (IsInImage(i, j))
+			{
+				const int dx = i - circleCenter.x;
+				const int dy = j - circleCenter.y;
+				const int distanceSquared = dx * dx + dy * dy;
+				if (abs(distanceSquared - radiusSquared) <= static_cast<int>(m_nCircleLine) * radius)
+					fm[j * nPitch + i] = s_Gray;
+			}
 		}
 	}
 }
@@ -218,6 +248,67 @@ bool CGrimInterviewDlg::IsInImage(const int i, const int j) const
 	return bRet;
 }
 
+bool CGrimInterviewDlg::GetIntersection(CPoint* pIntersection, const CPoint& p1, const CPoint& p2, const CPoint& q1, const CPoint& direction2) const
+{
+	const double x1 = p1.x, y1 = p1.y;
+	const double x2 = p2.x, y2 = p2.y;
+	const double x3 = q1.x, y3 = q1.y;
+	const double x4 = direction2.x, y4 = direction2.y;
+
+	const double denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+	if (denom == 0)
+		return false;
+
+	const double px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom;
+	const double py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom;
+
+	auto inRange = [](double a, double b, double x) {
+		return (x >= min(a, b)) && (x <= max(a, b));
+	};
+
+	if (inRange(x1, x2, px) && inRange(y1, y2, py) &&
+		inRange(x3, x4, px) && inRange(y3, y4, py))
+	{
+		if (pIntersection)
+		{
+			pIntersection->x = static_cast<int>(px);
+			pIntersection->y = static_cast<int>(py);
+		}
+
+		return true;
+	}
+
+	else
+		return false;
+}
+
+bool CGrimInterviewDlg::GetIntersectionWidthDirections(CPoint* pIntersection,
+	const CPoint& p1, const CPoint& direction1,
+	const CPoint& p2, const CPoint& direction2) const
+{
+	const double x1 = p1.x;
+	const double y1 = p1.y;
+	const double dx1 = direction1.x;
+	const double dy1 = direction1.y;
+	const double x2 = p2.x, y2 = p2.y;
+	const double dx2 = direction2.x, dy2 = direction2.y;
+	const double denom = dx1 * dy2 - dy1 * dx2;
+	if (denom == 0.0) 
+		return false;
+
+	const double t1 = ((x2 - x1) * dy2 - (y2 - y1) * dx2) / denom;
+	const double px = x1 + t1 * dx1;
+	const double py = y1 + t1 * dy1;
+
+	if (pIntersection) 
+	{
+		pIntersection->x = static_cast<int>(px);
+		pIntersection->y = static_cast<int>(py);
+	}
+
+	return true;
+}
+
 LRESULT CGrimInterviewDlg::OnUpdateDisplay(WPARAM, LPARAM)
 {
 	CClientDC dc(this);
@@ -237,14 +328,13 @@ void CGrimInterviewDlg::OnBnClickedAction()
 	m_nRadius = _ttoi(strData);
 
 	auto move = [this]
-		{
+	{
 			while (true)
 			{
 				MoveCircle();
 				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 			}
-
-		};
+	};
 
 	auto threadpool = Threadpool::GetInstance();
 	threadpool->AddWork(move);
@@ -252,14 +342,32 @@ void CGrimInterviewDlg::OnBnClickedAction()
 
 void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
+	CString strData;
+	CEdit* pCircleLine = (CEdit*)GetDlgItem(IDC_EDIT_CIRCLE_LINE);
+	CEdit* pRadius = (CEdit*)GetDlgItem(IDC_EDIT_RADIUS);
+
+	pCircleLine->GetWindowTextW(strData);
+	m_nCircleLine = _ttoi(strData);
+
+	pRadius->GetWindowTextW(strData);
+	m_nRadius = _ttoi(strData);
+
 	if (IsInImage(point.x, point.y))
 	{
 		if (m_nCircleCount < 3)
 		{
-			auto fm = (unsigned char*)m_image.GetBits();
-			drawCircle(fm, point.x, point.y, static_cast<int>(m_nRadius), s_Gray);
-			++m_nCircleCount;
-			UpdateDisplay();
+			auto task = [this, point] {
+				auto fm = (unsigned char*)m_image.GetBits();
+				drawCircle(fm, point.x, point.y, static_cast<int>(m_nRadius), s_Gray);
+				m_circleCenters[m_nCircleCount++] = point;
+				if (m_nCircleCount == 3)
+					DrawCircleWithThreePoints();
+
+				UpdateDisplay();
+			};
+			
+			auto threadpool = Threadpool::GetInstance();
+			threadpool->AddWork(task);
 		}
 	}
 
@@ -281,4 +389,18 @@ void CGrimInterviewDlg::OnBnClickedClear()
 	}
 
 	UpdateDisplay();
+}
+
+bool CGrimInterviewDlg::IsCirclePoint(const int i, const int j, const int centerX, const int centerY,
+	const int nRadius, const int nLineThickness) const
+{
+	bool bRet = false;
+	const int dx = i - centerX;
+	const int dy = j - centerY;
+	const int distance = dx * dx + dy * dy;
+	const auto gap = abs(distance - nRadius * nRadius);
+	if (gap <= nLineThickness* nLineThickness)
+		bRet = true;
+
+	return bRet;
 }

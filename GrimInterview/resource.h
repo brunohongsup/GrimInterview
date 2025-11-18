@@ -5,6 +5,7 @@
 #define IDOK2                           2
 #define ID_CREATE_IMAGE                 2
 #define ID_ACTION                       3
+#define ID_CLEAR                        4
 #define IDD_GRIMINTERVIEW_DIALOG        102
 #define IDR_MAINFRAME                   128
 #define IDC_EDIT_RADIUS                 1000

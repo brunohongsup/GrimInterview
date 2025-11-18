@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Threadpool.h"
 
+#include "RandomTask.h"
+
 std::unique_ptr<Threadpool> Threadpool::s_pInstance = nullptr;
 std::mutex Threadpool::s_mtx;
 
@@ -77,6 +79,12 @@ bool Threadpool::AddWork(const std::shared_ptr<ITask>& pTask)
     
     m_cv.notify_one();
     return true;
+}
+
+bool Threadpool::AddWork(const std::function<void()>& work)
+{
+    const auto task = std::make_shared<RandomTask>(work);
+	return AddWork(task);
 }
 
 void Threadpool::workerLoop()

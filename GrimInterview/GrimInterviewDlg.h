@@ -33,11 +33,13 @@ protected:
 public:
 	afx_msg void OnBnClickedCreateImage();
 
+	afx_msg void OnBnClickedAction();
 
-private:
-	CImage m_image;
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
-	void drawCircle(unsigned char* fm, const int i, const int j, const int nRadius, unsigned char nGray);
+	afx_msg void OnBnClickedClear();
+
+	afx_msg LRESULT OnUpdateDisplay(WPARAM, LPARAM);
 
 	void UpdateDisplay();
 
@@ -47,8 +49,18 @@ private:
 
 	bool IsInImage(const int i, const int j) const;
 
-	afx_msg LRESULT OnUpdateDisplay(WPARAM , LPARAM );
+private:
 
-public:
-	afx_msg void OnBnClickedAction();
+	CImage m_image;
+
+	size_t m_nRadius;
+
+	size_t m_nCircleLine;
+
+	size_t m_nCircleCount;
+
+	constexpr static int s_Gray = 80;
+
+	void drawCircle(unsigned char* fm, const int i, const int j, const int nRadius, unsigned char nGray);
+	
 };

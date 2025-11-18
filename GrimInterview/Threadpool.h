@@ -6,6 +6,8 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <functional>
+
 #include "ITask.h"
 
 class Threadpool
@@ -22,6 +24,8 @@ public:
 	void CleanUp();
 
 	bool AddWork(const std::shared_ptr<ITask>& pTask);
+
+	bool AddWork(const std::function<void()>& work);
 
 private:
 	Threadpool();

@@ -17,11 +17,6 @@
 #define new DEBUG_NEW
 #endif
 
-
-// CGrimInterviewDlg dialog
-
-
-
 CGrimInterviewDlg::CGrimInterviewDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_GRIMINTERVIEW_DIALOG, pParent)
 {
@@ -39,6 +34,8 @@ BEGIN_MESSAGE_MAP(CGrimInterviewDlg, CDialogEx)
 	ON_BN_CLICKED(ID_CREATE_IMAGE, &CGrimInterviewDlg::OnBnClickedCreateImage)
 	ON_BN_CLICKED(ID_ACTION, &CGrimInterviewDlg::OnBnClickedAction)
 	ON_MESSAGE(WM_UPDATE_DISPLAY, &OnUpdateDisplay)
+	ON_WM_LBUTTONDOWN()
+	ON_BN_CLICKED(ID_CLEAR, &CGrimInterviewDlg::OnBnClickedClear)
 END_MESSAGE_MAP()
 
 // CGrimInterviewDlg message handlers
@@ -59,6 +56,16 @@ BOOL CGrimInterviewDlg::OnInitDialog()
 
 	CEdit* pRadius = (CEdit*)GetDlgItem(IDC_EDIT_RADIUS);
 	pRadius->SetWindowTextW(_T("10"));
+
+	CString strData;
+	pCircleLine->GetWindowTextW(strData);
+	m_nCircleLine = _ttoi(strData);
+
+	pRadius->GetWindowTextW(strData);
+	m_nRadius = _ttoi(strData);
+
+	m_nCircleCount = 0;
+
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -152,15 +159,13 @@ void CGrimInterviewDlg::drawCircle(unsigned char* fm, const int x, const int y, 
 
 void CGrimInterviewDlg::UpdateDisplay()
 {
-	CClientDC dc(this);
-	m_image.Draw(dc.m_hDC, 0, 0);
+	PostMessage(WM_UPDATE_DISPLAY);
 }
 
 void CGrimInterviewDlg::MoveCircle()
 {
 	static int nSttX = 0;
 	static int nStty = 0;
-	const int nGray = 80;
 	const int nWidth = m_image.GetWidth();
 	const int nHeight = m_image.GetHeight();
 	const int nPitch = m_image.GetPitch();
@@ -177,12 +182,12 @@ void CGrimInterviewDlg::MoveCircle()
 		}
 
 		const int nRadius = 10;
-		drawCircle(fm, nSttX, nStty, nRadius, nGray);
+		drawCircle(fm, nSttX, nStty, nRadius, s_Gray);
 		++nSttX;
 		++nStty;
 	}
-	
-	PostMessage(WM_UPDATE_DISPLAY);
+
+	UpdateDisplay();
 }
 
 bool CGrimInterviewDlg::IsInCircle(const int i, const int j, const int centerX, const int centerY,
@@ -200,9 +205,13 @@ bool CGrimInterviewDlg::IsInCircle(const int i, const int j, const int centerX, 
 
 bool CGrimInterviewDlg::IsInImage(const int i, const int j) const
 {
+	if (m_image.IsNull())
+		return false;
+
 	bool bRet = false;
 	const int nWidth = m_image.GetWidth();
 	const int nHeight = m_image.GetHeight();
+
 	if (i >= 0 && i < nWidth && j >= 0 && j < nHeight)
 		bRet = true;
 
@@ -211,23 +220,65 @@ bool CGrimInterviewDlg::IsInImage(const int i, const int j) const
 
 LRESULT CGrimInterviewDlg::OnUpdateDisplay(WPARAM, LPARAM)
 {
-	UpdateDisplay();
+	CClientDC dc(this);
+	m_image.Draw(dc.m_hDC, 0, 0);
 	return 0;
 }
 
 void CGrimInterviewDlg::OnBnClickedAction()
 {
+	CString strData;
+	CEdit* pCircleLine = (CEdit*)GetDlgItem(IDC_EDIT_CIRCLE_LINE);
+	pCircleLine->GetWindowTextW(strData);
+	m_nCircleLine = _ttoi(strData);
+
+	CEdit* pRadius = (CEdit*)GetDlgItem(IDC_EDIT_RADIUS);
+	pRadius->GetWindowTextW(strData);
+	m_nRadius = _ttoi(strData);
+
 	auto move = [this]
 		{
 			while (true)
 			{
 				MoveCircle();
-				std::this_thread::sleep_for(std::chrono::milliseconds(30));
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 			}
 
 		};
 
 	auto threadpool = Threadpool::GetInstance();
-	auto task = std::make_shared<RandomTask>(move);
-	threadpool->AddWork(task);
+	threadpool->AddWork(move);
+}
+
+void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	if (IsInImage(point.x, point.y))
+	{
+		if (m_nCircleCount < 3)
+		{
+			auto fm = (unsigned char*)m_image.GetBits();
+			drawCircle(fm, point.x, point.y, static_cast<int>(m_nRadius), s_Gray);
+			++m_nCircleCount;
+			UpdateDisplay();
+		}
+	}
+
+	CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+void CGrimInterviewDlg::OnBnClickedClear()
+{
+	auto fm = (unsigned  char*)m_image.GetBits();
+	const int nPitch = m_image.GetPitch();
+	const int nWidth = m_image.GetWidth();
+	const int nHeight = m_image.GetHeight();
+	m_nCircleCount = 0;
+
+	for (int j = 0; j < nHeight; j++)
+	{
+		for (int i = 0; i < nWidth; i++)
+			fm[j * nPitch + i] = 0xff;
+	}
+
+	UpdateDisplay();
 }

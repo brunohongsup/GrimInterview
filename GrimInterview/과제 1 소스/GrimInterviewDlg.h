@@ -74,7 +74,7 @@ private:
 
 	int m_nRadius;
 
-	size_t m_nCircleLine;
+	int m_nCircleLine;
 
 	size_t m_nCircleCount;
 

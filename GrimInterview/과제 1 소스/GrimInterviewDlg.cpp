@@ -171,7 +171,9 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 	bool bRet = GetIntersectionWidthDirections(&circleCenter, firstPairCenter, firstDirection, secondPairCenter, secondDirection);
 	if (!bRet)
 	{
-		
+		clearImage();
+		UpdateDisplay();
+		return;
 	}
 
 	const int dx = circleCenter.x - m_circleCenters[0].x;
@@ -180,16 +182,16 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 	const int radius = static_cast<int>(std::sqrt(static_cast<double>(radiusSquared)));
 	auto fm = static_cast<unsigned char*>(m_image.GetBits());
 	const int nPitch = m_image.GetPitch();
-	for (int j = circleCenter.y - radius - 1; j <= circleCenter.y + radius + 2; j++)
+	for (int j = circleCenter.y - radius - m_nCircleLine; j <= circleCenter.y + radius + m_nCircleLine; j++)
 	{
-		for (int i = circleCenter.x - radius - 1; i <= circleCenter.x + radius + 2; i++)
+		for (int i = circleCenter.x - radius - m_nCircleLine; i <= circleCenter.x + radius + m_nCircleLine; i++)
 		{
 			if (IsInImage(i, j))
 			{
 				const int dx = i - circleCenter.x;
 				const int dy = j - circleCenter.y;
 				const int distanceSquared = dx * dx + dy * dy;
-				if (abs(distanceSquared - radiusSquared) <= static_cast<int>(m_nCircleLine) * radius)
+				if (abs(distanceSquared - radiusSquared) <= (m_nCircleLine) * radius)
 					fm[j * nPitch + i] = s_Gray;
 			}
 		}

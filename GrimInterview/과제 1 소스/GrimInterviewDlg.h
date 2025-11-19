@@ -4,6 +4,7 @@
 
 #pragma once
 #define WM_UPDATE_DISPLAY (WM_USER + 1)
+#include <mutex>
 
 // CGrimInterviewDlg dialog
 class CGrimInterviewDlg : public CDialogEx
@@ -81,6 +82,8 @@ private:
 	CPoint m_circleCenters[3];
 
 	bool m_bDrag;
+
+	std::mutex m_mtx;
 
 public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);

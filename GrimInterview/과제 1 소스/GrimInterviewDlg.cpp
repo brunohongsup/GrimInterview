@@ -171,11 +171,14 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 	auto secondDirection = CPoint(m_circleCenters[2].y - m_circleCenters[1].y, m_circleCenters[1].x - m_circleCenters[2].x);
 
 	CPoint circleCenter{};
+	auto fm = static_cast<unsigned char*>(m_image.GetBits());
 	bool bRet = GetIntersectionWidthDirections(&circleCenter, firstPairCenter, firstDirection, secondPairCenter, secondDirection);
 	if (!bRet)
 	{
 		clearImage();
-		UpdateDisplay();
+		for (int idx = 0; idx < 3; idx++)
+			drawCircle(fm, m_circleCenters[idx].x, m_circleCenters[idx].y, static_cast<int>(m_nRadius), s_Gray);
+
 		return;
 	}
 
@@ -183,7 +186,15 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 	const int dy = circleCenter.y - m_circleCenters[0].y;
 	const int radiusSquared = dx * dx + dy * dy;
 	const int radius = static_cast<int>(std::sqrt(static_cast<double>(radiusSquared)));
-	auto fm = static_cast<unsigned char*>(m_image.GetBits());
+	if (radius > m_image.GetWidth() * 2)
+	{
+		clearImage();
+		for (int idx = 0; idx < 3; idx++)
+			drawCircle(fm, m_circleCenters[idx].x, m_circleCenters[idx].y, static_cast<int>(m_nRadius), s_Gray);
+
+		return;
+	}
+
 	const int nPitch = m_image.GetPitch();
 	for (int j = circleCenter.y - radius - m_nCircleLine; j <= circleCenter.y + radius + m_nCircleLine; j++)
 	{
@@ -339,9 +350,10 @@ bool CGrimInterviewDlg::GetIntersectionWidthDirections(CPoint* pIntersection,
 	const double dx1 = direction1.x;
 	const double dy1 = direction1.y;
 	const double x2 = p2.x, y2 = p2.y;
-	const double dx2 = direction2.x, dy2 = direction2.y;
+	const double dx2 = direction2.x;
+	const double dy2 = direction2.y;
 	const double denom = dx1 * dy2 - dy1 * dx2;
-	if (denom == 0.0) 
+	if (std::abs(denom) < 0.05) 
 		return false;
 
 	const double t1 = ((x2 - x1) * dy2 - (y2 - y1) * dx2) / denom;
@@ -416,7 +428,6 @@ void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
 					if (m_nCircleCount == 3)
 						DrawCircleWithThreePoints();
 
-
 					UpdateDisplay();
 				}
 
@@ -465,31 +476,42 @@ void CGrimInterviewDlg::OnMouseMove(UINT nFlags, CPoint point)
 		{
 			if (m_bDrag)
 			{
-				for (int idx = 0; idx < 3; idx++)
+				bool bIsAnyCircleClicked = false;
+				std::unique_lock<std::mutex> lock(m_mtx, std::defer_lock);
+				if (lock.try_lock())
 				{
-					const double dblDistanceSquared = (point.x - m_circleCenters[idx].x) * (point.x - m_circleCenters[idx].x) +
-						(point.y - m_circleCenters[idx].y) * (point.y - m_circleCenters[idx].y);
-					if (dblDistanceSquared < 6 * 6)
-						m_circleCenters[idx] = point;
+					for (int idx = 0; idx < 3; idx++)
+					{
+						const double dblDistanceSquared = (point.x - m_circleCenters[idx].x) * (point.x - m_circleCenters[idx].x) +
+							(point.y - m_circleCenters[idx].y) * (point.y - m_circleCenters[idx].y);
+						if (dblDistanceSquared < 100)
+						{
+							m_circleCenters[idx] = point;
+							bIsAnyCircleClicked = true;
+							break;
+						}
+					}
+
+					if (!bIsAnyCircleClicked)
+						return;
+
+					auto fm = (unsigned  char*)m_image.GetBits();
+					const int nPitch = m_image.GetPitch();
+					const int nWidth = m_image.GetWidth();
+					const int nHeight = m_image.GetHeight();
+					for (int j = 0; j < nHeight; j++)
+					{
+						for (int i = 0; i < nWidth; i++)
+							fm[j * nPitch + i] = 0xff;
+					}
+
+					for (int idx = 0; idx < 3; idx++)
+						drawCircle(fm, m_circleCenters[idx].x, m_circleCenters[idx].y, static_cast<int>(m_nRadius), s_Gray);
+
+					DrawCircleWithThreePoints();
+					UpdateDisplay();
 				}
-
-				auto fm = (unsigned  char*)m_image.GetBits();
-				const int nPitch = m_image.GetPitch();
-				const int nWidth = m_image.GetWidth();
-				const int nHeight = m_image.GetHeight();
-				for (int j = 0; j < nHeight; j++)
-				{
-					for (int i = 0; i < nWidth; i++)
-						fm[j * nPitch + i] = 0xff;
-				}
-
-				for (int idx = 0; idx < 3; idx++)
-					drawCircle(fm, m_circleCenters[idx].x, m_circleCenters[idx].y, static_cast<int>(m_nRadius), s_Gray);
-
-				DrawCircleWithThreePoints();
-				UpdateDisplay();
 			}
-
 		};
 	
 	auto threadpool = Threadpool::GetInstance();

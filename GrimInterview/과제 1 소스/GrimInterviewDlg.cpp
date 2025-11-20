@@ -163,7 +163,7 @@ void CGrimInterviewDlg::drawCircle(unsigned char* fm, const int centerX, const i
 	}
 }
 
-void CGrimInterviewDlg::DrawCircleWithThreePoints()
+void CGrimInterviewDlg::drawCircleWithThreePoints()
 {
 	auto firstPairCenter = CPoint((m_circleCenters[0].x + m_circleCenters[1].x) / 2, (m_circleCenters[0].y + m_circleCenters[1].y) / 2);
 	auto secondPairCenter = CPoint((m_circleCenters[1].x + m_circleCenters[2].x) / 2, (m_circleCenters[1].y + m_circleCenters[2].y) / 2);
@@ -172,7 +172,7 @@ void CGrimInterviewDlg::DrawCircleWithThreePoints()
 
 	CPoint circleCenter{};
 	auto fm = static_cast<unsigned char*>(m_image.GetBits());
-	bool bRet = GetIntersectionWidthDirections(&circleCenter, firstPairCenter, firstDirection, secondPairCenter, secondDirection);
+	bool bRet = GetIntersectionWithDirections(&circleCenter, firstPairCenter, firstDirection, secondPairCenter, secondDirection);
 	if (!bRet)
 	{
 		clearImage();
@@ -248,7 +248,7 @@ void CGrimInterviewDlg::randomMove()
 		drawCircle(fm, m_circleCenters[i].x, m_circleCenters[i].y, m_nRadius, s_Gray);
 	}
 
-	DrawCircleWithThreePoints();
+	drawCircleWithThreePoints();
 	UpdateDisplay();
 }
 
@@ -341,7 +341,7 @@ bool CGrimInterviewDlg::GetIntersection(CPoint* pIntersection, const CPoint& p1,
 		return false;
 }
 
-bool CGrimInterviewDlg::GetIntersectionWidthDirections(CPoint* pIntersection,
+bool CGrimInterviewDlg::GetIntersectionWithDirections(CPoint* pIntersection,
 	const CPoint& p1, const CPoint& direction1,
 	const CPoint& p2, const CPoint& direction2) const
 {
@@ -426,7 +426,7 @@ void CGrimInterviewDlg::OnLButtonDown(UINT nFlags, CPoint point)
 					drawCircle(fm, point.x, point.y, static_cast<int>(m_nRadius), s_Gray);
 					m_circleCenters[m_nCircleCount++] = point;
 					if (m_nCircleCount == 3)
-						DrawCircleWithThreePoints();
+						drawCircleWithThreePoints();
 
 					UpdateDisplay();
 				}
@@ -508,7 +508,7 @@ void CGrimInterviewDlg::OnMouseMove(UINT nFlags, CPoint point)
 					for (int idx = 0; idx < 3; idx++)
 						drawCircle(fm, m_circleCenters[idx].x, m_circleCenters[idx].y, static_cast<int>(m_nRadius), s_Gray);
 
-					DrawCircleWithThreePoints();
+					drawCircleWithThreePoints();
 					UpdateDisplay();
 				}
 			}

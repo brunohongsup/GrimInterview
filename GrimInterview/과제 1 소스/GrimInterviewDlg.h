@@ -55,7 +55,7 @@ public:
 	bool GetIntersection(__out CPoint* pIntersection, const CPoint& p1, const CPoint& p2,
 		const CPoint& q1, const CPoint& direction2) const;
 
-	bool GetIntersectionWidthDirections(__out CPoint* pIntersection, const CPoint& p1, const CPoint& direction1,
+	bool GetIntersectionWithDirections(__out CPoint* pIntersection, const CPoint& p1, const CPoint& direction1,
 		const CPoint& p2, const CPoint& direction2) const;
 
 
@@ -63,7 +63,7 @@ private:
 
 	void drawCircle(unsigned char* fm, const int i, const int j, const int nRadius, unsigned char nGray);
 
-	void DrawCircleWithThreePoints();
+	void drawCircleWithThreePoints();
 
 	void clearImage();
 

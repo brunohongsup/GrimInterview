@@ -34,11 +34,7 @@ Threadpool::~Threadpool()
 bool Threadpool::init()
 {
     std::lock_guard<std::mutex> lock(m_queueMutex);
-    int threadCount = static_cast<int>(std::thread::hardware_concurrency());
-    threadCount -= 8;
-    if (threadCount < 0)
-        threadCount = 4;
-
+    const int threadCount = static_cast<int>(std::thread::hardware_concurrency());
     m_workers.reserve(threadCount);
     for (size_t i = 0; i < threadCount; ++i)
         m_workers.emplace_back([this] { this->workerLoop(); });

@@ -3,6 +3,8 @@
 //
 
 #pragma once
+#include <afxinet.h>
+#include <memory>
 
 #ifndef __AFXWIN_H__
 	#error "include 'pch.h' before including this file for PCH"
@@ -24,9 +26,14 @@ public:
 public:
 	BOOL InitInstance() override;
 
+	std::shared_ptr<CInternetSession> GetSession() {return m_pSession;}
+
 // Implementation
 
 	DECLARE_MESSAGE_MAP()
+
+private:
+	std::shared_ptr<CInternetSession> m_pSession;
 };
 
 extern CGrimInterviewApp theApp;

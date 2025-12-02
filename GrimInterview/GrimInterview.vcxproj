@@ -93,6 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -183,17 +184,22 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="과제 1 소스\FileIOBackgroundJob.h" />
     <ClInclude Include="과제 1 소스\framework.h" />
     <ClInclude Include="과제 1 소스\GrimInterview.h" />
     <ClInclude Include="과제 1 소스\GrimInterviewDlg.h" />
     <ClInclude Include="과제 1 소스\ITask.h" />
+    <ClInclude Include="과제 1 소스\json.hpp" />
     <ClInclude Include="과제 1 소스\pch.h" />
+    <ClInclude Include="과제 1 소스\Product.h" />
+    <ClInclude Include="과제 1 소스\ProductManager.h" />
     <ClInclude Include="과제 1 소스\RandomTask.h" />
     <ClInclude Include="과제 1 소스\Resource.h" />
     <ClInclude Include="과제 1 소스\targetver.h" />
     <ClInclude Include="과제 1 소스\Threadpool.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="과제 1 소스\FileIOBackgroundJob.cpp" />
     <ClCompile Include="과제 1 소스\GrimInterview.cpp" />
     <ClCompile Include="과제 1 소스\GrimInterviewDlg.cpp" />
     <ClCompile Include="과제 1 소스\ITask.cpp" />
@@ -203,6 +209,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="과제 1 소스\ProductManager.cpp" />
     <ClCompile Include="과제 1 소스\RandomTask.cpp" />
     <ClCompile Include="과제 1 소스\Threadpool.cpp" />
   </ItemGroup>

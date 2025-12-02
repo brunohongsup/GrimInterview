@@ -73,7 +73,7 @@ BOOL CGrimInterviewApp::InitInstance()
 	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
 
 	const auto threadpool = Threadpool::GetInstance();
-
+	m_pSession = std::make_shared<CInternetSession>();
 
 	CGrimInterviewDlg dlg;
 	m_pMainWnd = &dlg;

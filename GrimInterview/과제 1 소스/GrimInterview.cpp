@@ -5,6 +5,8 @@
 #include "pch.h"
 #include "framework.h"
 #include "GrimInterview.h"
+
+#include "FileIOBackgroundJob.h"
 #include "GrimInterviewDlg.h"
 #include "Threadpool.h"
 
@@ -71,9 +73,13 @@ BOOL CGrimInterviewApp::InitInstance()
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
 	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
-
-	const auto threadpool = Threadpool::GetInstance();
-	m_pSession = std::make_shared<CInternetSession>();
+	{
+		const auto threadpool = Threadpool::GetInstance();
+		m_pSession = std::make_shared<CInternetSession>();
+		const auto backgroundFileIO = FileIOBackgroundJob::GetInstance();
+	}
+	
+	
 
 	CGrimInterviewDlg dlg;
 	m_pMainWnd = &dlg;

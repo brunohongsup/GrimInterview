@@ -7,9 +7,18 @@
 
 class CHttpFile;
 
-constexpr std::string_view g_szEquipmentId = "L01-3503-E";
+constexpr std::string_view g_szEdgeCuttingEquipmentId = "L01-3503-E";
+
+constexpr std::string_view g_szBusbarVisionEquipmentId = "L02-3503-F";
+
+constexpr std::string_view g_szFlatnessVisionEquipmentId = "L03-3503-G";
+
+constexpr std::string_view g_szBusbarVisionEquipmentName = "BusbarVision";
+
+constexpr std::string_view g_szFlatnessVisionEquipmentName = "BusbarVision";
 
 constexpr std::string_view g_szEquipmentName = "PI Edge-Cutting";
+
 
 struct Product;
 
@@ -33,7 +42,9 @@ struct HttpPostIO : public HttpIO
 
 	bool DoFileIO() override;
 
-	const double GenerateRandom(const double& min, const double& max) const;
+	double GenerateDouble(const double& min, const double& max) const;
+	
+	int GenerateInteger(const int& min, const int& max) const;
 
 	virtual bool PostData(CHttpFile*) = 0;
 
@@ -49,23 +60,23 @@ struct PostEquipmentIO : public HttpPostIO
 	bool m_bEquipmentStatus;
 };
 
-struct PostProductIO : public HttpPostIO
+struct PostEdgeCuttingIO : HttpPostIO
 {
-	PostProductIO();
+	PostEdgeCuttingIO();
 
 	bool PostData(CHttpFile* pFile) override;
 
 	std::shared_ptr<Product> product;
 };
 
-struct PostFlatnessIO : public PostProductIO
+struct PostFlatnessIO : public PostEdgeCuttingIO
 {
 	PostFlatnessIO() = default;
 
 	bool PostData(CHttpFile* pFile) override;
 };
 
-struct PostBusbarIO :  PostProductIO
+struct PostBusbarIO :  PostEdgeCuttingIO
 {
 	PostBusbarIO() = default;
 

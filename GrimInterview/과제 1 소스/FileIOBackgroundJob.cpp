@@ -152,7 +152,6 @@ bool HttpPostIO::DoFileIO()
 			// Example output: {"type":"...","title":"One or more validation errors occurred.","errors":{"EquipmentId":["The value 'L01-3503-E' is not valid."]}}
 			CString strErrorMsg;
 			strErrorMsg.Format(_T("Server Rejected Data (400). Details:\n%s"), strResponse);
-			AfxMessageBox(strErrorMsg);
 		}
 	}
 
@@ -181,11 +180,27 @@ bool HttpPostIO::DoFileIO()
 	return true;
 }
 
-const double HttpPostIO::GenerateRandom(const double& min, const double& max) const
+double HttpPostIO::GenerateDouble(const double& min, const double& max) const
 {
-	std::random_device rd;
-	std::mt19937 gen(rd());
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
 	std::uniform_real_distribution<> dis(min, max);
+
+	double val = dis(gen);
+
+	// Round to 3 decimal places:
+	// 1. Multiply by 1000 (1.23456 -> 1234.56)
+	// 2. Round to nearest integer (1234.56 -> 1235)
+	// 3. Divide by 1000 (1235 -> 1.235)
+	return std::round(val * 1000.0) / 1000.0;
+}
+
+int HttpPostIO::GenerateInteger(const int& min, const int& max) const
+{
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+    
+	std::uniform_int_distribution<int> dis(min, max);
 	return dis(gen);
 }
 
@@ -202,7 +217,7 @@ bool PostEquipmentIO::PostData(CHttpFile* pFile)
 		return false;
 
 	nlohmann::json j;
-	j["EquipmentId"] = g_szEquipmentId;
+	j["EquipmentId"] = g_szEdgeCuttingEquipmentId;
 	j["Name"] = g_szEquipmentName;
 	j["Location"] = "Pajoo";
 	j["Type"] = 1;
@@ -214,14 +229,14 @@ bool PostEquipmentIO::PostData(CHttpFile* pFile)
 	return false;
 }
 
-PostProductIO::PostProductIO()
-	: HttpPostIO(_T("Products/Create"))
+PostEdgeCuttingIO::PostEdgeCuttingIO()
+	: HttpPostIO(_T("api/Products/Create"))
 {
 	const auto product = ProductManager::GetInstance()->GetLastProduct();
 	this->product = product;
 }
 
-bool PostProductIO::PostData(CHttpFile* pFile)
+bool PostEdgeCuttingIO::PostData(CHttpFile* pFile)
 {
 	if (nullptr == pFile)
 		return false;
@@ -229,40 +244,48 @@ bool PostProductIO::PostData(CHttpFile* pFile)
 	if (nullptr == product)
 		return false;
 
-	json j;
-	// --- 3. Map Fields to C# Properties ---
+	// 1. Create the Root Object (Matches ProductInputModel.cs)
+	json root;
+    
+	// --- Metadata Fields ---
+	root["ProductId"] = CT2CA(product->Id);
+	root["EquipmentId"] = g_szEdgeCuttingEquipmentId; 
+    
+	// CRITICAL: Tell the server what kind of data this is.
+	// This string must match what you check for in your C# UpdateChart logic.
+	root["DataType"] = "EdgeCutting"; 
 
-	// C# ProductId (required) matches C++ Id
-	j["ProductId"] = CT2CA(product->Id);
+	// 2. Create the Payload Object (Matches GeometryPayload.cs)
+	json payload;
 
-	// If your struct doesn't have it, send null or a hardcoded ID.
-	j["EquipmentId"] = g_szEquipmentId;
+	// --- Geometry Data ---
+	// Note: I capitalized these keys (Dx, Dy) to match the C# properties.
+	// However, if you set PropertyNameCaseInsensitive = true in C#, lowercase is fine too.
+	payload["Dx"] = GenerateDouble(-3.0f, 3.0f);
+	payload["Dy"] = GenerateDouble(-3.0f, 3.0f);
+	payload["DTheta"] = GenerateDouble(-1.5f, 1.5f);
+    
+	// If you have 'Theta' in your C++ struct, add it here:
+	// payload["Theta"] = product->dblTheta; 
 
-	// C# ManufacturedAt (DateTime) matches C++ InputTime
-	auto time = CT2CA(product->InputTime.Format(_T("%Y-%m-%dT%H:%M:%S")));
-	j["ManufacturedAt"] = time;
-
-	// C# Alignment Data (required doubles)
-	j["dx"] = GenerateRandom(-3.0, 3.0);
-	j["dy"] = GenerateRandom(-3.0, 3.0);
-	j["theta"] = GenerateRandom(-1.2, 1.2);
-
-	// --- 4. Handle Complex 'Curl' Data ---
-	// C# expects an object { ValueA: ..., ValueB: ... }
-	// C++ has an array dblCurlHeight[4]. 
-	// We map the array indices to the JSON object properties.
+	// --- Curl Data ---
 	json curlObj;
-	curlObj["Val1"] = GenerateRandom(7.0, 18.0);
-	curlObj["Val2"] = GenerateRandom(7.0, 18.0); // Map Index 1
-	curlObj["Val3"] = GenerateRandom(7.0, 18.0); // Map Index 1
-	curlObj["Val4"] = GenerateRandom(7.0, 18.0); // Map Index 1
+	curlObj["Val1"] = GenerateDouble(7.0f, 20.0f);
+	curlObj["Val2"] = GenerateDouble(7.0f, 20.0f);
+	curlObj["Val3"] = GenerateDouble(7.0f, 20.0f);
+	curlObj["Val4"] = GenerateDouble(7.0f, 20.0f);
 
-	// Note: If you need to send indices 2 and 3, you must 
-	// update the C# CurlData class to have ValueC/ValueD
+	// Add Curl object into the Payload
+	payload["Curl"] = curlObj;
 
-	j["Curl"] = curlObj;
-	auto data = j.dump();
-	if (pFile->SendRequest(NULL, 0, LPVOID(data.c_str()), static_cast<DWORD>(data.length())))
+	// 3. Attach the Payload to the Root
+	// The C# API expects a property named "Payload" containing this object
+	root["Payload"] = payload;
+
+	// 4. Send the Request
+	// We dump the 'root' object, which now contains the nested payload
+	std::string data = root.dump();
+	if (pFile->SendRequest(NULL, 0, (LPVOID)data.c_str(), (DWORD)data.length()))
 		return true;
 
 	return false;
@@ -276,39 +299,40 @@ bool PostFlatnessIO::PostData(CHttpFile* pFile)
 	if (nullptr == product)
 		return false;
 
-	json j;
-	// --- 3. Map Fields to C# Properties ---
+	// Inside PostProductIO::PostData
 
-	// C# ProductId (required) matches C++ Id
-	j["ProductId"] = CT2CA(product->Id);
+	// 1. Root Object
+	json root;
+	root["ProductId"] = CT2CA(product->Id);
+	root["EquipmentId"] = g_szFlatnessVisionEquipmentId;
+	root["DataType"] = "Flatness"; // <--- Important: New DataType
 
-	// If your struct doesn't have it, send null or a hardcoded ID.
-	j["EquipmentId"] = g_szEquipmentId;
+	// 2. Prepare the Flatness Payload
+	json payload;
 
-	// C# ManufacturedAt (DateTime) matches C++ InputTime
-	auto time = CT2CA(product->InputTime.Format(_T("%Y-%m-%dT%H:%M:%S")));
-	j["ManufacturedAt"] = time;
+	// Create C++ vectors or arrays to hold the JSON data
+	std::vector<double> front;
+	std::vector<double> rear;
 
-	// C# Alignment Data (required doubles)
-	j["dx"] = GenerateRandom(-3.0, 3.0);
-	j["dy"] = GenerateRandom(-3.0, 3.0);
-	j["theta"] = GenerateRandom(-1.2, 1.2);
+	// Loop 24 times to fill the arrays
+	for (int i = 0; i < 24; i++)
+	{
+		// Assuming your C++ product struct has arrays named dblFlatnessA and dblFlatnessB
+		front.push_back(GenerateDouble(0.0, 1.2)); 
+		rear.push_back(GenerateDouble(0.0, 1.1));
+	}
 
-	// --- 4. Handle Complex 'Curl' Data ---
-	// C# expects an object { ValueA: ..., ValueB: ... }
-	// C++ has an array dblCurlHeight[4]. 
-	// We map the array indices to the JSON object properties.
-	json curlObj;
-	curlObj["Val1"] = GenerateRandom(7.0, 18.0);
-	curlObj["Val2"] = GenerateRandom(7.0, 18.0); // Map Index 1
-	curlObj["Val3"] = GenerateRandom(7.0, 18.0); // Map Index 1
-	curlObj["Val4"] = GenerateRandom(7.0, 18.0); // Map Index 1
+	// Assign to payload
+	payload["Front"] = front;
+	payload["Rear"] = rear;
+
+	// 3. Attach payload to root
+	root["Payload"] = payload;
+
+	std::string data = root.dump();
 
 	// Note: If you need to send indices 2 and 3, you must 
 	// update the C# CurlData class to have ValueC/ValueD
-
-	j["Curl"] = curlObj;
-	auto data = j.dump();
 	if (pFile->SendRequest(NULL, 0, LPVOID(data.c_str()), static_cast<DWORD>(data.length())))
 		return true;
 
@@ -317,7 +341,64 @@ bool PostFlatnessIO::PostData(CHttpFile* pFile)
 
 bool PostBusbarIO::PostData(CHttpFile* pFile)
 {
-	return PostProductIO::PostData(pFile);
+	if (nullptr == pFile || nullptr == product)
+       return false;
+
+    // 1. Root Object
+    json root;
+    root["ProductId"] = CT2CA(product->Id);
+    root["EquipmentId"] = g_szBusbarVisionEquipmentId;
+    
+    // CRITICAL: Set the correct DataType so the C# side knows to map it to BusbarPayload
+    root["DataType"] = "Busbar"; 
+
+    // 2. Prepare Payload Object
+    json payload;
+
+    // 3. Create Vectors to hold the array data
+    // We use vectors because nlohmann::json handles them automatically
+    std::vector<double> tfLen, trLen, bfLen, brLen;
+    std::vector<int> tfCnt, trCnt, bfCnt, brCnt;
+
+    // 4. Populate Vectors
+    // Assuming you have a loop (e.g., 24 items, or however many leads you measure)
+    const int ITEM_COUNT = 8; 
+    for (int i = 0; i < ITEM_COUNT; i++)
+    {
+        // Populate Lengths (Doubles)
+        tfLen.push_back(GenerateDouble(5.0, 12.0));
+        trLen.push_back(GenerateDouble(6.0, 11.5));
+        bfLen.push_back(GenerateDouble(5.0, 12.0));
+        brLen.push_back(GenerateDouble(6.0, 11.5));
+
+        // Populate Counts (Integers)
+        tfCnt.push_back(GenerateInteger(3, 7));
+        trCnt.push_back(GenerateInteger(3, 7));
+        bfCnt.push_back(GenerateInteger(3, 7));
+        brCnt.push_back(GenerateInteger(3, 7));
+    }
+
+    // 5. Assign Vectors to JSON Properties
+    // These keys MUST match the C# BusbarPayload property names exactly
+    payload["TopFrontLeadLength"] = tfLen;
+    payload["TopRearLeadLength"] = trLen;
+    payload["BtmFrontLeadLength"] = bfLen;
+    payload["BtmRearLeadLength"] = brLen;
+
+    payload["TopFrontLeadCount"] = tfCnt;
+    payload["TopRearLeadCount"] = trCnt;
+    payload["BtmFrontLeadCount"] = bfCnt;
+    payload["BtmRearLeadCount"] = brCnt;
+
+    // 6. Attach Payload to Root
+    root["Payload"] = payload;
+
+    // 7. Send Request
+    std::string data = root.dump();
+    if (pFile->SendRequest(NULL, 0, (LPVOID)data.c_str(), (DWORD)data.length()))
+       return true;
+
+    return false;
 }
 
 CString HttpIO::GetIp()

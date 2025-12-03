@@ -11,6 +11,8 @@
 #include <thread>
 #include <random>
 #include "afxdialogex.h"
+#include "FileIOBackgroundJob.h"
+#include "ProductManager.h"
 #include "RandomTask.h"
 #include "Threadpool.h"
 
@@ -41,6 +43,7 @@ BEGIN_MESSAGE_MAP(CGrimInterviewDlg, CDialogEx)
 	ON_WM_LBUTTONUP()
 	ON_BN_CLICKED(ID_RANDOM_MOVE, &CGrimInterviewDlg::OnBnClickedRandomMove)
 	ON_BN_CLICKED(ID_CONSECUTIVE_RANDOM_MOVE, &CGrimInterviewDlg::OnBnClickedConsecutiveRandomMove)
+	ON_BN_CLICKED(ID_CONSECUTIVE_RANDOM_MOVE2, &CGrimInterviewDlg::OnBnClickedSendData)
 END_MESSAGE_MAP()
 
 // CGrimInterviewDlg message handlers
@@ -548,4 +551,40 @@ void CGrimInterviewDlg::OnBnClickedConsecutiveRandomMove()
 
 	auto threadpool = Threadpool::GetInstance();
 	threadpool->AddWork(consecutive);
+}
+
+void CGrimInterviewDlg::OnBnClickedSendData()
+{
+	auto sendData = []()
+	{
+		const auto productManager = ProductManager::GetInstance();
+		auto generateId = [](const int nLength)
+		{
+			const CString CHARACTERS = _T("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+			std::random_device rd;
+			std::mt19937 generator(rd());
+			std::uniform_int_distribution<> dist(0, CHARACTERS.GetLength() - 1);
+
+			CString id;
+			for (int i = 0; i < nLength; ++i)
+				id += CHARACTERS[dist(generator)];
+
+			return id;
+		};
+		
+		const auto backgroundFileIO = FileIOBackgroundJob::GetInstance();
+		for (int i = 0; i < 60; i++)
+		{
+			productManager->AddProduct(generateId(12));
+			const auto flatnessData = std::make_shared<PostFlatnessIO>();
+			const auto edgeCuttingData = std::make_shared<PostEdgeCuttingIO>();
+			const auto busbarData = std::make_shared<PostBusbarIO>();
+			backgroundFileIO->Add(flatnessData);
+			backgroundFileIO->Add(edgeCuttingData);
+			backgroundFileIO->Add(busbarData);
+		}
+	};
+	
+	auto threadpool = Threadpool::GetInstance();
+	threadpool->AddWork(sendData);
 }

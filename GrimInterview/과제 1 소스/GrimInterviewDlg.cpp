@@ -573,7 +573,7 @@ void CGrimInterviewDlg::OnBnClickedSendData()
 		};
 		
 		const auto backgroundFileIO = FileIOBackgroundJob::GetInstance();
-		for (int i = 0; i < 60; i++)
+		for (int i = 0; i < 10; i++)
 		{
 			productManager->AddProduct(generateId(12));
 			const auto flatnessData = std::make_shared<PostFlatnessIO>();
@@ -582,6 +582,7 @@ void CGrimInterviewDlg::OnBnClickedSendData()
 			backgroundFileIO->Add(flatnessData);
 			backgroundFileIO->Add(edgeCuttingData);
 			backgroundFileIO->Add(busbarData);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	};
 	
